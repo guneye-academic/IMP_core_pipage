@@ -59,8 +59,8 @@ namespace IMP_core_pipage
             //swvar_summary=new StreamWriter("results.txt");
             sw = new Stopwatch();
 
-            //file_names = new string[10] { "phy-250", "phy-500", "phy-1k", "phy-2k", "phy-5k", "phy-10k", "phy-20k", "phy-50k", "phy-100k", "phy-200k" };
-            file_names = new string[7] { "run_1K", "run_2K", "run_5K", "run_10K", "run_20K", "run_50K", "run_100K" };
+            file_names = new string[10] { "arcs2000", "phy-500", "phy-1k", "phy-2k", "phy-5k", "phy-10k", "phy-20k", "phy-50k", "phy-100k", "phy-200k" };
+            //file_names = new string[7] { "run_1K", "run_2K", "run_5K", "run_10K", "run_20K", "run_50K", "run_100K" };
             string[] file_names2 = new string[10] { "GRZ-n1000-k4-b0.3-d1-50-g0-i1", "GRZ-n1000-k4-b0.3-d1-50-g0-i2", "GRZ-n1000-k4-b0.3-d1-50-g0-i3", "GRZ-n1000-k4-b0.3-d1-50-g0-i4", "GRZ-n1000-k4-b0.3-d1-50-g0-i5", "GRZ-n2500-k16-b0.3-d1-50-g0-i1", "GRZ-n2500-k16-b0.3-d1-50-g0-i2", "GRZ-n2500-k16-b0.3-d1-50-g0-i3", "GRZ-n2500-k16-b0.3-d1-50-g0-i4", "GRZ-n2500-k16-b0.3-d1-50-g0-i5" };
             string[] file_names3 = new string[5] { "Email-Enron.im", "phy.im", "p2p-Gnutella04.im", "CollegeMsg.im", "Slashdot0902.txt" };
 
@@ -70,7 +70,7 @@ namespace IMP_core_pipage
             int[] fixed_N1 = new int[4] { 30, 200, 300, 500 };
             double[] fixed_probs = new double[2] { 0.01, 0.05 };
             //swvar = new StreamWriter("log-degreecentrality.txt");
-            SAA_M = 1;
+            SAA_M = 20;
             SAA_N1 = 30;
             SAA_N2 = 5000;
             SAA_N3 = 5000;
@@ -94,13 +94,14 @@ namespace IMP_core_pipage
             file_index_last = 5;
             k_max = 7;
 
-            for (int file_index = 3; file_index < file_index_last; file_index++)
+            for (int file_index = 0; file_index < file_index_last; file_index++)
             {
                 //file_index =6;
                 //SAA_N1 = fixed_N1[file_index];
                 filename = file_names3[file_index];
+                //filename = file_names[file_index];
                 //fixed_probability = fixed_probs[file_index];
-                
+
                 //CELF_main();
                 for (int j = 0; j < 1; j++) //jmax=10
                 {
@@ -388,6 +389,7 @@ namespace IMP_core_pipage
             //path = @"C:\Users\Evren\Downloads\inst\CollegeMsg.im";
             //path = @"C:\Users\Evren\Downloads\inst\Slashdot0902.txt";
             path = @"C:\Users\Evren\Downloads\inst\" + filename;
+            path = @"D:\Influence-marketing\Code\influencer-1\weighted_ic\" + filename+".txt";
             //path=@"D:\zz_doktora\ourpapers\2017\IMP-Linear\dataset\facebook_combined.txt";
             //path = @"D:\Influence-marketing\Code\influencer-1\sample-data-4w.txt";
             //path = (@"D:\Influence-marketing\Code\influencer-1\sample-data-40blank.txt");
@@ -399,28 +401,35 @@ namespace IMP_core_pipage
             //path = @"D:\zz_doktora\ourpapers\2017\IMP-Linear\dataset\ruthmaier_socnet\" + filename + ".txt";
             arc_set = new List<string>();
 
-            var readData = (File.ReadLines(path).Skip(4).Select(a => {
+            var readData = (File.ReadLines(path).Skip(0).Select(a => {
                 //string[] nodes_string_arr = a.Split(' ');
                 //var temparc = nodes_string_arr[0] + "," + nodes_string_arr[1];
                 //return new { Head = int.Parse(nodes_string_arr[0]), Tail = int.Parse(nodes_string_arr[1]),Id = a };
                 return new { Id = a };
             }).AsParallel().ToList());
 
-            unique_arcs = readData.GroupBy(a => a.Id).Select(a => new { Key = a, Count = a.Count() }).Select(a =>
+            if (arc_weights_ON==0)
+            {
+                unique_arcs = readData.GroupBy(a => a.Id).Select(a => new { Key = a, Count = a.Count() }).Select(a =>
             new ReadData
             {
                 Key = new { Head = int.Parse(a.Key.Key.Split(' ')[0]), Tail = int.Parse(a.Key.Key.Split(' ')[1]) },
                 Count = a.Count,
                 W = (a.Count == 1) ? fixed_probability : (1 - Math.Pow((1 - fixed_probability), a.Count)),
             }).AsParallel().ToList();
+            }
 
-            //unique_arcs = readData.GroupBy(a => a.Id).Select(a => new { Key = a, Count = a.Count() }).Select(a =>
-            //new ReadData
-            //{
-            //    Key = new { Head = int.Parse(a.Key.Key.Split(',')[0]), Tail = int.Parse(a.Key.Key.Split(',')[1]) },
-            //    Count = a.Count,
-            //    W = double.Parse(a.Key.Key.Split(',')[2]),
-            //}).AsParallel().ToList();
+            else
+            {
+                unique_arcs = readData.GroupBy(a => a.Id).Select(a => new { Key = a, Count = a.Count() }).Select(a =>
+                new ReadData
+                {
+                    Key = new { Head = int.Parse(a.Key.Key.Split(';')[0]), Tail = int.Parse(a.Key.Key.Split(';')[1]) },
+                    Count = a.Count,
+                    W = double.Parse(a.Key.Key.Split(';')[2]),
+                }).AsParallel().ToList();
+            }
+
 
             //new ReadData
             //{
@@ -915,118 +924,7 @@ namespace IMP_core_pipage
             }
         }
 
-
-        //public static void SAA()
-        //{
-
-        //    //trial_limit = SAA_N1;
-        //    SA_1_obj = new double[SAA_M];
-        //    SA_1_test_obj = new double[SAA_M];
-        //    SAA_list = new List<List<UInt16>>(SAA_M);
-        //    string SAA_str_solution = "";
-
-        //    if (is_BUDGETED != 1)
-        //    {
-        //        BUDGET = k_init;
-        //    }
-
-        //    initialize_neighbourhood();
-        //    UInt16 nodeID1, nodeID2;
-        //    nodeID1 = node_set.IndexOf(131);
-        //    nodeID2 = node_set.IndexOf(142);
-        //    List<UInt16> temp_list = new List<UInt16>();
-        //    temp_list.Add(nodeID1); temp_list.Add(nodeID2);
-        //    initialize_SAA_3_prb();
-        //    SA_3_obj = evaluate_influence(temp_list, 0, SAA_N3, 2);
-
-        //    initialize_SAA_neighbourhood(SAA_M, SAA_N1);
-
-        //    determine_network_depth(SAA_N1);
-        //    double temp_obj = 0;
-        //    double max_obj = -1;
-        //    int max_index = -1;
-        //    int type = 0;
-        //    for (int i = 0; i < SAA_M; i++)
-        //    {
-        //        System.Console.WriteLine("Solving " + (i + 1) + "-th SAA problem");
-        //        SA_1_obj[i] = mip_model(i, 0, SAA_N1);
-        //        temp_obj = temp_obj + SA_1_obj[i];
-        //    }
-        //    SA_1_hat_obj = temp_obj / SAA_M;
-
-        //    string[] stringsArray;
-        //    string the_vars_list;
-
-        //    temp_obj = 0;
-        //    System.Console.WriteLine("SAA uppdobund : " + SA_1_hat_obj);
-        //    SA_2_obj = new double[SAA_M];
-        //    //SAA-2'leri LP olarak çözeceksen bu iki satırı açman gerek
-        //    //initialize_SAA_neighbourhood(SAA_M, SAA_N2);
-        //    //determine_network_depth(SAA_N2);
-        //    for (int i = 0; i < SAA_M; i++)
-        //    {
-        //        initialize_SAA_2_prb(i);
-        //        SAA_current_list = new List<UInt16>(SAA_list[i]);
-        //        temp_obj = evaluate_influence(SAA_list[i], i, SAA_N2, 1);
-        //        //temp_obj = mip_model(i, 1, SAA_N2); ;
-        //        //SAA_list_string = string.Join(",", );
-        //        stringsArray = SAA_list[i].Select(the_i => the_i.ToString()).ToArray();
-        //        the_vars_list = string.Join(",", stringsArray);
-        //        System.Console.WriteLine("Evaluating x: " + the_vars_list + ", and " + (i + 1) + "-th objective (" + SA_1_obj[i] + ") -->" + temp_obj);
-        //        if (temp_obj > max_obj)
-        //        {
-        //            max_obj = temp_obj;
-        //            max_index = i;
-        //        }
-        //        SA_2_obj[i] = temp_obj;
-        //        //SA_1_test_obj[i] = evaluate_influence(SAA_list[i], i, SAA_N1,0);
-        //    }
-        //    max_obj = SA_2_obj[max_index];
-        //    System.Console.WriteLine("Re-Evaluating " + (max_index + 1) + "-th objective with influence : " + max_obj);
-
-
-        //    // STEP - 3 OF SAA METHOD
-        //    initialize_SAA_3_prb();
-        //    SA_3_obj = evaluate_influence(SAA_list[max_index], 0, SAA_N3, 2);
-
-
-        //    //UInt16[] st_arr = SAA_list[max_index].ToArray();
-
-        //    int k;
-        //    k = SAA_list[max_index].Count;
-        //    SAA_list[max_index].Sort();
-        //    for (int i = 0; i < k; i++)
-        //    {
-        //        //sww.WriteLine(result_set[i]);
-        //        SAA_str_solution = SAA_str_solution + "," + node_set[(int)SAA_list[max_index][i]];
-        //    }
-
-        //    sw.Stop(); sw_elapsed = sw.Elapsed; Double dt = System.Convert.ToDouble(sw_elapsed.Ticks);
-
-        //    System.Console.WriteLine("-------------summary---------------");
-        //    System.Console.WriteLine("SA_1_hat : " + SA_1_hat_obj);
-        //    System.Console.WriteLine("SA_2* : " + max_obj + " the " + (max_index + 1) + "-th sample");
-        //    System.Console.WriteLine("SA_3* : " + SA_3_obj);
-        //    System.Console.WriteLine("Optimality Gap : " + (SA_1_hat_obj - SA_3_obj) + " (% " + 100 * (SA_1_hat_obj - SA_3_obj) / SA_3_obj + ")");
-        //    swvar.WriteLine("SA_1_hat : " + SA_1_hat_obj);
-        //    swvar.WriteLine("SA_2* : " + max_obj + " the " + (max_index + 1) + "-th sample");
-        //    swvar.WriteLine("SA_3* : " + SA_3_obj);
-        //    swvar.WriteLine("Optimality Gap : " + (SA_1_hat_obj - SA_3_obj) + " (% " + 100 * (SA_1_hat_obj - SA_3_obj) / SA_3_obj + ")");
-        //    //System.Console.ReadKey();
-        //    //List<UInt16> IMBP_sol = new List<UInt16>(50);
-
-        //    string constr = "Server=localhost\\SQLExpress;Database=research;User Id=doktora;Password=cesmede;";
-        //    SqlConnection conn = new SqlConnection(constr);
-        //    conn.Open();
-        //    SqlCommand command = conn.CreateCommand();
-        //    command.CommandText = "INSERT INTO BIMP_SAA (SAA_M,SAA_N1,SAA_N2,SAA_N3,modelID, diffusion_modelID,K,network_sampleID,node_size,edge_size,duration,z_star,SAA_z, SAA_z2, SAA_z3,solution_y, propagation_prop, budget) VALUES (" + SAA_M + "," + SAA_N1 + "," + SAA_N2 + "," + SAA_N3 + ",1,1," + k_init + ",1," + N + "," + E + "," + dt + ",-1," + SA_1_hat_obj + "," + max_obj + "," + SA_3_obj + ",'" + SAA_str_solution + "'," + prop_prob + ",'" + BUDGET + "')";
-        //    command.ExecuteNonQuery();
-        //    command.Dispose();
-        //    conn.Close();
-        //}
-
-
-        public static void TIPTOP()
+       public static void TIPTOP()
         {
             //if (run_reduction == 1)
             //  reduce_tree_list();
